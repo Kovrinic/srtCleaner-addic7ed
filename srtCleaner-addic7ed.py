@@ -100,7 +100,7 @@ class srtcleaner(object):
 
     def save_srt(self, path, data):
         try:
-            with open(path+'new', 'w') as f:
+            with open(path, 'w') as f:
                 f.write(''.join(data).strip())
         except Exception as e:
             if not self.args.s:

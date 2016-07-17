@@ -53,12 +53,15 @@ class srtcleaner(object):
                     if filename.endswith('.srt'):
                         srt_file_list.append(os.path.join(r, filename))
         else:
-            srt_file_list = [f for f in os.listdir(dir_path) if f.endswith(".srt")]
+            srt_file_list = [os.path.join(dir_path, f) for f in os.listdir(dir_path) if f.endswith(".srt")]
 
         if not srt_file_list:
             raise argparse.ArgumentTypeError('Skipping. No \".srt\" files found within \"%s\".' %dir_path)
 
-        return [self.input_file(f) for f in srt_file_list]
+        for f in srt_file_list:
+            print f
+            self.input_file(f)
+        return
 
     def del_addic7ed(self, data):
         start_line_index = None

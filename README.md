@@ -1,4 +1,4 @@
-srtCleaner
+srtCleaner-addic7ed
 ==========
 
 Clean _Addic7ed_ info from `srt` files downloaded from [Addic7ed.com](http://www.addic7ed.com/index.php).
@@ -10,7 +10,7 @@ Clean _Addic7ed_ info from `srt` files downloaded from [Addic7ed.com](http://www
 
 #### Usage
 ```
-usage: srtCleaner [-h] [--version] [-d] [-r] [-n] [-v] [-s] srt
+usage: srtCleaner-addic7ed [-h] [--version] [-d] [-r] [-n] [-v] [-s] srt
 
 Clean "Addic7ed" from srt files.
 

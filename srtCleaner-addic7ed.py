@@ -18,6 +18,7 @@ class srtcleaner(object):
         self.parser.add_argument('-s', action='store_true', help='Run Silently. Squash all output including errors.')
 
         self.args = self.parser.parse_args()
+        self.skip = False
         self.arg_handler()
 
     def arg_handler(self):
@@ -35,7 +36,10 @@ class srtcleaner(object):
         if not self.args.s:
             print('Cleaning "Addic7ed" from %s' %srt_input)
 
-        return self.remove_addic7ed(file_path)
+        if not self.remove_addic7ed(file_path):
+            if not self.args.s:
+                print('\"%s\" Skipped due to unknow error.' %srt_input)
+        return
 
     def input_dir(self):
         dir_path = os.path.abspath(self.args.srt)
@@ -58,65 +62,45 @@ class srtcleaner(object):
         if not srt_file_list:
             raise argparse.ArgumentTypeError('Skipping. No \".srt\" files found within \"%s\".' %dir_path)
 
-        for f in srt_file_list:
-            print f
-            self.input_file(f)
-        return
+        return [self.input_file(f) for f in srt_file_list]
 
     def del_addic7ed(self, data):
-        start_line_index = None
-        for i, line in enumerate(data):
-            ri = re.search(r'^(\d+)\r\n$', line)
-            if ri:
-                start_line_index = i
-
-            if re.search(r'(www\.addic7ed\.com)', line) and start_line_index:
-                if self.args.v and not self.args.s:
-                    print(data[start_line_index:i+1])
-                del data[start_line_index:i+1]
-                return data
-
-        return data
-
-    def clean_list(self, data):
-        match = True
-        count = 0
-
-        while match or (count <= 5):
-            count += 1
-            if re.search(r'(www\.addic7ed\.com)', ''.join(data)):
-                data = self.del_addic7ed(data)
-            else:
-                match = False
-
+        matches = re.findall(r'(?m)^(\d+\r\n(?:.+\r\n.+)+addic7ed.+\r\n+(?:\r\n)?)', data)
+        self.skip = False
+        if len(matches) == 0:
+            self.skip = True
+            if not self.args.s:
+                print('Skipping: No addic7ed info in current data set.')
+            return data
+        for m in matches:
+            if self.args.v and not self.args.s:
+                print('Removing lines -->')
+                print(m)
+            data = data.replace(m, '')
         return data
 
     def update_index(self, data):
-        count = 0
-        for i, line in enumerate(data):
-            if re.search(r'^(\d+)\r\n$', line):
-                count += 1
-                re.sub(r'(\d+)', str(count), data[i])
-
+        matches = re.findall(r'(?m)^(\d+\r\n)', data)
+        for i, m in enumerate(matches):
+            data = re.sub(r'(?m)^(%s)' %m, r'%i\r\n' %(i+1), data)
         return data
 
     def load_srt(self, path):
         data = None
         try:
             with open(path, 'r') as f:
-                data = f.readlines()
+                data = f.read()
         except Exception as e:
             if not self.args.s:
                 print('Load Error: %s' %str(e))
                 traceback.print_exc()
             else:
                 pass
-
         return data
 
     def save_srt(self, path, data):
         try:
-            with open(path, 'w') as f:
+            with open(path+'new', 'w') as f:
                 f.write(''.join(data).strip())
         except Exception as e:
             if not self.args.s:
@@ -130,9 +114,11 @@ class srtcleaner(object):
     def remove_addic7ed(self, file_path):
         data = self.load_srt(file_path)
         if data:
-            data = self.clean_list(data)
+            data = self.del_addic7ed(data)
             data = self.update_index(data)
             if self.args.n:
+                return True
+            elif self.skip:
                 return True
             if not self.save_srt(file_path, data):
                 return False
